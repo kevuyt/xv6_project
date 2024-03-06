@@ -428,6 +428,7 @@ scheduler(void)
     struct proc *next_proc = 0;
 
     #ifdef FIFO
+    cprintf("fifo");
     int lowest_position = -1;
         for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
           if(p->state != RUNNABLE)
@@ -449,6 +450,7 @@ scheduler(void)
           c->proc = p;
           switchuvm(p);
           p->state = RUNNING;
+          p->ticks++;
           swtch(&(c->scheduler), p->context);
           switchkvm();
 
@@ -457,6 +459,7 @@ scheduler(void)
         }
     #else
     #ifdef LOTTERY
+    cprintf("lottery");
     int total_tickets = 0;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
       if(p->state != RUNNABLE || p->pid <= 1) continue;
@@ -477,11 +480,13 @@ scheduler(void)
       c->proc = p;
       switchuvm(p);
       p->state = RUNNING;
+      p->ticks++;
       swtch(&(c->scheduler), p->context);
       switchkvm();
       c->proc = 0;
     }
     #else
+    cprintf("rr");
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
         if(p->state != RUNNABLE)
            continue;
@@ -491,6 +496,7 @@ scheduler(void)
         c->proc = p;
         switchuvm(p);
         p->state = RUNNING;
+        p->ticks++;
         swtch(&(c->scheduler), p->context);
         switchkvm();
     
