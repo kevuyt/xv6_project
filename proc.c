@@ -432,8 +432,6 @@ scheduler(void)
         for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
           if(p->state != RUNNABLE)
             continue;
-
-          // Ignore init and sh processes from FIFO
           if (lowest_position == -1 || p->fifo_position < lowest_position) {
             next_proc = p;
             lowest_position = p->fifo_position;
