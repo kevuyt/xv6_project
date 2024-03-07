@@ -391,7 +391,6 @@ wait(void)
 void
 scheduler(void)
 {
-
   struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
@@ -435,11 +434,9 @@ scheduler(void)
             continue;
 
           // Ignore init and sh processes from FIFO
-          if(p->pid > 1){
-            if (lowest_position == -1 || p->fifo_position < lowest_position) {
-              next_proc = p;
-              lowest_position = p->fifo_position;
-            }
+          if (lowest_position == -1 || p->fifo_position < lowest_position) {
+            next_proc = p;
+            lowest_position = p->fifo_position;
           }
         }
 
@@ -462,13 +459,17 @@ scheduler(void)
     //cprintf("lottery");
     int total_tickets = 0;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-      if(p->state != RUNNABLE || p->pid <= 1) continue;
+      if(p->state != RUNNABLE) continue;
       total_tickets += p->lottery_tickets;
+    }
+    if(total_tickets == 0) {
+      release(&ptable.lock);
+      continue;
     }
     int lottery_num = get_random(0, total_tickets);
 
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-      if(p->state != RUNNABLE || p->pid <= 1) continue;
+      if(p->state != RUNNABLE) continue;
       lottery_num -= p->lottery_tickets;
       if(lottery_num <= 0) {
         next_proc = p;
