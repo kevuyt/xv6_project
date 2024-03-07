@@ -1,49 +1,38 @@
 #include "types.h"
 #include "user.h"
-#include "fcntl.h"
 
-void runCommand(char *command, char **argv) {
-    int pid = fork();
-    if (pid < 0) {
-        printf(1, "Fork failed\n");
-        return;
-    }
-    if (pid == 0) {
-        exec(command, argv);
-        printf(1, "exec %s failed\n", command);
+void run_and_measure(const char *command) {
+    int start_uptime, end_uptime;
+
+    printf(1, "\nExecuting: %s\n", command);
+
+    start_uptime = uptime();
+
+    if (fork() == 0) {
+        char *argv[] = {"sh", "-c", (char *) command, 0};
+        exec("sh", argv);
+        printf(2, "exec %s failed\n", command);
         exit();
     } else {
         wait();
     }
+
+    end_uptime = uptime();
+
+    printf(1, "Completed: %s\n", command);
+    printf(1, "Ticks Running: %d\n", ticks_running(getpid()));
+    printf(1, "Uptime: %d seconds\n", end_uptime - start_uptime);
 }
 
 int main(void) {
-    int start_ticks, end_ticks;
+    printf(1, "Starting scheduler tests...\n");
 
-    // Record start time
-    start_ticks = uptime();
+    run_and_measure("ls");
+    run_and_measure("find /");
+    run_and_measure("cat README | uniq");
+    run_and_measure("YOUR_NON_TRIVIAL_COMMAND_HERE"); // Replace with your command
 
-    // Run stressfs
-    char *stressfs_argv[] = {"stressfs", 0};
-    runCommand("stressfs", stressfs_argv);
-
-    // Run find
-    char *find_argv[] = {"find", "/", 0};
-    runCommand("find", find_argv);
-
-    // Run cat README | uniq
-    char *cat_argv[] = {"cat", "README", 0};
-    runCommand("cat", cat_argv); // Assuming the 'uniq' part is handled in shell
-
-    // Run a non-trivial command of your choosing
-    // Example: char *custom_argv[] = {"your_command", "arg1", "arg2", 0};
-    // runCommand("your_command", custom_argv);
-
-    // Record end time
-    end_ticks = uptime();
-
-    // Calculate and print the total time taken
-    printf(1, "Total ticks elapsed: %d\n", end_ticks - start_ticks);
+    printf(1, "Scheduler tests completed.\n");
 
     exit();
 }
