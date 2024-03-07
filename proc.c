@@ -668,6 +668,32 @@ ticks_running(int pid)
   return -1;
 }
 
+void set_lottery_tickets(int tickets, int pid) {
+  struct proc *p;
+  acquire(&ptable.lock);
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+    if(p->pid == pid) {
+      p->lottery_tickets = tickets;
+      release(&ptable.lock);
+    }
+  }
+  release(&ptable.lock);
+}
+
+int get_lottery_tickets(int pid) {
+  struct proc *p;
+  acquire(&ptable.lock);
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+    if(p->pid == pid) {
+      int tickets = p->lottery_tickets;
+      release(&ptable.lock);
+      return tickets;
+    }
+  }
+  release(&ptable.lock);
+  return -1;
+}
+
 int get_random(int min, int max) {
   int range = max - min;
   if(range==0) return min;

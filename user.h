@@ -25,7 +25,10 @@ int sleep(int);
 int uptime(void);
 int uniq(int);
 int ticks_running(int);
+void set_lottery_tickets(int,int);
+int get_lottery_tickets(int);
 //int wait2(int*, int*, int*);
+
 
 
 // ulib.c

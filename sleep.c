@@ -6,6 +6,7 @@
 int
 main(int argc, char *argv[])
 {
+    set_lottery_tickets(100,getpid());
     int ticks;
     if(argc != 2) {
         printf(1, "%s\n", "Error: sleep requires exactly 1 argument");

@@ -121,6 +121,8 @@ int             wait(void);
 void            wakeup(void*);
 void            yield(void);
 int             ticks_running(int);
+void            set_lottery_tickets(int, int);
+int             get_lottery_tickets(int);
 int             get_random(int, int);
 struct proc*    get_proc(int);
 
