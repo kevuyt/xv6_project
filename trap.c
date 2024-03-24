@@ -124,13 +124,16 @@ trap(struct trapframe *tf)
   case T_PGFLT:
     int j = 1;
     #ifdef LOCALITY
-      // cprintf("LOCALITY\n");
+      cprintf("LOCALITY\n");
       j = 3;
+    #else
+      cprintf("LAZY\n");
     #endif
     uint addr = rcr2();
 
     for (int i = 0; i < j; i++) {
       char *mem = kalloc();
+      cprintf("Allocating New Page (%d)\n", i + 1);
       if (mem == 0) {
         cprintf("Page allocation failed\n");
         exit();
