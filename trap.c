@@ -80,6 +80,8 @@ idtinit(void)
 void
 trap(struct trapframe *tf)
 {
+  uint addr;
+  char *mem;
   if(tf->trapno == T_SYSCALL){
     if(myproc()->killed)
       exit();
@@ -129,10 +131,10 @@ trap(struct trapframe *tf)
     #else
       cprintf("LAZY\n");
     #endif
-    uint addr = rcr2();
+    addr = rcr2();
 
     for (int i = 0; i < j; i++) {
-      char *mem = kalloc();
+      mem = kalloc();
       cprintf("Allocating New Page (%d)\n", i + 1);
       if (mem == 0) {
         cprintf("Page allocation failed\n");
