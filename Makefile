@@ -79,6 +79,7 @@ OBJDUMP = $(TOOLPREFIX)objdump
 CFLAGS = -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -Wno-unused-variable -Wno-unused-function
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
 CFLAGS += -D $(SCHEDULER)
+CFLAGS += -D $(ALLOCATOR)
 ASFLAGS = -m32 -gdwarf-2 -Wa,-divide
 # FreeBSD ld wants ``elf_i386_fbsd''
 LDFLAGS += -m $(shell $(LD) -V | grep elf_i386 2>/dev/null | head -n 1)
@@ -95,6 +96,13 @@ ifndef SCHEDULER
 SCHEDULER := RR
 else
 define $(SCHEDULER)
+endef
+endif
+
+ifndef ALLOCATOR
+ALLOCATOR := LAZY
+else
+define $(ALLOCATOR)
 endef
 endif
 
@@ -235,6 +243,7 @@ QEMUOPTS = -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,
 
 qemu: fs.img xv6.img
 	@echo "Scheduler policy: $(SCHEDULER)"
+	@echo "Allocator policy: $(ALLOCATOR)"
 	$(QEMU) -serial mon:stdio $(QEMUOPTS)
 
 qemu-memfs: xv6memfs.img

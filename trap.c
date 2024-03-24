@@ -122,19 +122,26 @@ trap(struct trapframe *tf)
     lapiceoi();
     break;
   case T_PGFLT:
+    int j = 1;
+    #ifdef LOCALITY
+      // cprintf("LOCALITY\n");
+      j = 3;
+    #endif
     uint addr = rcr2();
 
-    char *mem = kalloc();
-    if (mem == 0) {
-      cprintf("Page allocation failed\n");
-      exit();
-    }
-    memset(mem, 0, PGSIZE);
+    for (int i = 0; i < j; i++) {
+      char *mem = kalloc();
+      if (mem == 0) {
+        cprintf("Page allocation failed\n");
+        exit();
+      }
+      memset(mem, 0, PGSIZE);
 
-    if(mappages(myproc()->pgdir, (void*)PGROUNDDOWN(addr), PGSIZE, V2P(mem), PTE_W|PTE_U) < 0) {
-      cprintf("Failed to map page\n");
-      kfree(mem);
-      exit();
+      if(mappages(myproc()->pgdir, (void*)(PGROUNDDOWN(addr) + i*PGSIZE), PGSIZE, V2P(mem), PTE_W|PTE_U) < 0) {
+        cprintf("Failed to map page\n");
+        kfree(mem);
+        exit();
+      }
     }
     break;
 
