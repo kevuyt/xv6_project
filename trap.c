@@ -77,6 +77,22 @@ trap(struct trapframe *tf)
             cpuid(), tf->cs, tf->eip);
     lapiceoi();
     break;
+  case T_PGFLT:
+    uint addr = rcr2();
+
+    char *mem = kalloc();
+    if (mem == 0) {
+      cprintf("Page allocation failed\n");
+      exit();
+    }
+    memset(mem, 0, PGSIZE);
+
+    if(mappages(myproc()->pgdir, (void*)PGROUNDDOWN(addr), PGSIZE, V2P(mem), PTE_W|PTE_U) < 0) {
+      cprintf("Failed to map page\n");
+      kfree(mem);
+      exit();
+    }
+    break;
 
   //PAGEBREAK: 13
   default:
