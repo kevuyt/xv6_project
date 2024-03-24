@@ -82,6 +82,7 @@ trap(struct trapframe *tf)
 {
   uint addr;
   char *mem;
+  int j = 1;
   if(tf->trapno == T_SYSCALL){
     if(myproc()->killed)
       exit();
@@ -124,7 +125,7 @@ trap(struct trapframe *tf)
     lapiceoi();
     break;
   case T_PGFLT:
-    int j = 1;
+    j = 1;
     #ifdef LOCALITY
       cprintf("LOCALITY\n");
       j = 3;
