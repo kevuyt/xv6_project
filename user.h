@@ -1,3 +1,5 @@
+#include "syscall.h"
+
 struct stat;
 struct rtcdate;
 
@@ -43,4 +45,5 @@ uint strlen(const char*);
 void* memset(void*, int, uint);
 void* malloc(uint);
 void free(void*);
+int lseek(int, int);
 int atoi(const char*);

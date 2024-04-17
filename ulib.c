@@ -81,6 +81,10 @@ stat(const char *n, struct stat *st)
   return r;
 }
 
+int lseek(int fd, int offset) {
+    return syscall(SYS_lseek, fd, offset);
+}
+
 int
 atoi(const char *s)
 {
