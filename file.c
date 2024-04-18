@@ -94,22 +94,30 @@ filestat(struct file *f, struct stat *st)
 
 // Read from file f.
 int
-fileread(struct file *f, char *addr, int n)
+fileread(struct inode *ip, char *addr, int n)
 {
-  int r;
+  // Check if the inode represents a symbolic link
+  if (ip->type == T_SYMLINK) {
+      // Read the target path of the symbolic link
+      memmove(addr, ip->symlink_target, n);
+      return strlen(ip->symlink_target);
+    }
 
-  if(f->readable == 0)
-    return -1;
-  if(f->type == FD_PIPE)
-    return piperead(f->pipe, addr, n);
-  if(f->type == FD_INODE){
-    ilock(f->ip);
-    if((r = readi(f->ip, addr, f->off, n)) > 0)
-      f->off += r;
-    iunlock(f->ip);
-    return r;
-  }
-  panic("fileread");
+  // Handle regular file or pipe
+  if (ip->type == T_FILE) {
+      ilock(ip);
+      int r = readi(ip, addr, ip->off, n);
+      if (r > 0) {
+          ip->off += r;
+      }
+      iunlock(ip);
+      return r;
+    } else if (ip->type == T_PIPE) {
+        return piperead(ip->pipe, addr, n);
+    }
+
+    // Handle unsupported file types
+    return -1; // Error: Unsupported file type
 }
 
 //PAGEBREAK!
@@ -118,7 +126,15 @@ int
 filewrite(struct file *f, char *addr, int n)
 {
   int r;
+  // Ensure that ip is a symbolic link
+  if (ip->type == T_SYMLINK) {
+    // Update the target path of the symbolic link
+    memmove(ip->symlink_target, addr, n);
+    ip->symlink_target[n] = '\0';
+    return n;
+  }
 
+  // Handle regular file or pipe
   if(f->writable == 0)
     return -1;
   if(f->type == FD_PIPE)

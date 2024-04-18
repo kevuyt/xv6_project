@@ -1,3 +1,9 @@
+// syscall.h
+
+#ifndef XV6_PUBLIC_SYSCALL_H
+#define XV6_PUBLIC_SYSCALL_H
+
+
 // System call numbers
 #define SYS_fork    1
 #define SYS_exit    2
@@ -24,3 +30,9 @@
 #define SYS_ticks_running 23
 #define SYS_get_lottery_tickets 24
 #define SYS_set_lottery_tickets 25
+
+#define SYS_symlink  26  // Define the system call number for symlink
+
+int symlink(char *target, char *path);  // Declare the symlink system call
+
+#endif // XV6_PUBLIC_SYSCALL_H
