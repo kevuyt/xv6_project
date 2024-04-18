@@ -23,6 +23,10 @@ struct inode {
   short nlink;
   uint size;
   uint addrs[NDIRECT+1];
+  off_t off;             // Current file offset
+  struct pipe *pipe;     // Pointer to pipe (for pipes)
+  // Add a field to store the target path of the symbolic link
+  char symlink_target[PATH_MAX]; // Adjust the size as necessary
 };
 
 // table mapping major device number to
@@ -35,3 +39,4 @@ struct devsw {
 extern struct devsw devsw[];
 
 #define CONSOLE 1
+#define FD_SYMLINK 3 // Define symbolic link file descriptor type

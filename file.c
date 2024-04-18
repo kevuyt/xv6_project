@@ -9,6 +9,7 @@
 #include "spinlock.h"
 #include "sleeplock.h"
 #include "file.h"
+#include "stat.h"
 
 struct devsw devsw[NDEV];
 struct {
@@ -134,9 +135,20 @@ filewrite(struct file *f, char *addr, int n)
     return n;
   }
 
-  // Handle regular file or pipe
+// Handle regular file or pipe
   if(f->writable == 0)
+  if(f == 0 || f->writable == 0)
     return -1;
+  if(f->off > f->ip->size) {
+    int new_size = f->off;
+    if(f->ip->type == T_FILE && (f->off > f->ip->size)) {
+      iupdate(f->ip);
+      if((f->ip->addrs[0] = bmap(f->ip, f->off-1)) == 0)
+        return -1;
+      }
+      f->ip->size = new_size;
+  }
+
   if(f->type == FD_PIPE)
     return pipewrite(f->pipe, addr, n);
   if(f->type == FD_INODE){

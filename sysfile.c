@@ -447,3 +447,20 @@ int
 sys_find(void){
 return 0;
 }
+int sys_lseek(void) {
+    int fd, offset;
+
+    if(argint(0, &fd) < 0 || argint(1, &offset) < 0)
+        return -1;
+
+    struct file *f;
+    if((f = myproc()->ofile[fd]) == 0)
+        return -1;
+
+    f->off += offset;
+
+    if(f->off < 0)
+        f->off = 0;
+
+    return f->off;
+}
