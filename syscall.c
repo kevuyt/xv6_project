@@ -109,7 +109,6 @@ extern int sys_ticks_running(void);
 extern int sys_set_lottery_tickets(void);
 extern int sys_get_lottery_tickets(void);
 extern int sys_lseek(void);
-
 extern int sys_symlink(void); // Add declaration for the symlink system call
 
 static int (*syscalls[])(void) = {
@@ -139,12 +138,9 @@ static int (*syscalls[])(void) = {
 [SYS_ticks_running] sys_ticks_running,
 [SYS_set_lottery_tickets] sys_set_lottery_tickets,
 [SYS_get_lottery_tickets] sys_get_lottery_tickets,
-<<<<<<< HEAD
-
 [SYS_symlink] sys_symlink, // Add entry for the symlink system call
-=======
 [SYS_lseek] sys_lseek,
->>>>>>> 56acaa399b16b53f8788cd18e43ce148a261d524
+
 };
 
 void

@@ -4,4 +4,4 @@
 #define O_CREATE  0x200
 
 // Define a new flag to indicate not to follow symbolic links
-#define O_NOFOLLOW  0x4000  
+#define O_NOFOLLOW  0x400

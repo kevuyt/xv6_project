@@ -32,9 +32,8 @@
 #define SYS_set_lottery_tickets 25
 #define SYS_symlink  26  // Define the system call number for symlink
 #define SYS_lseek 27
-
-int symlink(char *target, char *path);  // Declare the symlink system call
-
+// Declare the symlink system call
+extern int symlink(const char *target, const char *path);
 #endif // XV6_PUBLIC_SYSCALL_H
 
 
