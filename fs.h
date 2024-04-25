@@ -1,9 +1,12 @@
+#include "file.h"
+
 // On-disk file system format.
 // Both the kernel and user programs use this header file.
 
 
 #define ROOTINO 1  // root i-number
 #define BSIZE 512  // block size
+#define PATH_MAX 4096
 
 // Disk layout:
 // [ boot block | super block | log | inode blocks |

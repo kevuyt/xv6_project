@@ -114,55 +114,96 @@ sys_fstat(void)
   return filestat(f, st);
 }
 
+
+// Create a symbolic link to a file.
+int
+sys_symlink(void)
+{
+  char *target = NULL, *path = NULL;  // Initialize pointers to NULL
+  struct inode *ip;
+  
+  // Fetch the target and path from the user space
+  if (argstr(0, &target) < 0 || argstr(1, &path) < 0)
+    return -1;
+
+  // Begin a file system operation
+  begin_op();
+
+  // Attempt to create an inode for the symlink
+  if ((ip = create(path, T_SYMLINK, 0, 0)) == 0) {
+    end_op();  // End the file system operation if creation failed
+    return -1;
+  }
+
+  // Lock the inode for writing
+  ilock(ip);
+
+  // Compute the length of the target path, including the null terminator
+  int length = strlen(target) + 1;
+  int written = writei(ip, target, 0, length);
+
+  // Check if the write operation wrote the full length of the target
+  if (written != length) {
+    iunlockput(ip);  // Unlock and put the inode back if writing failed
+    end_op();
+    return -1;
+  }
+
+  // Unlock and release the inode
+  iunlockput(ip);
+  end_op();  // End the file system operation
+  
+  return 0;  // Return success
+}
+
 // Create the path new as a link to the same inode as old.
 int
-sys_link(void)
-{
-  char name[DIRSIZ], *new, *old;
-  struct inode *dp, *ip;
+sys_link(void) {
+    char name[DIRSIZ], *new, *old;
+    struct inode *dp, *ip;
 
-  if(argstr(0, &old) < 0 || argstr(1, &new) < 0)
-    return -1;
+    if(argstr(0, &old) < 0 || argstr(1, &new) < 0)
+        return -1;
 
-  begin_op();
-  if((ip = namei(old)) == 0){
-    end_op();
-    return -1;
-  }
+    begin_op();
+    if((ip = namei(old)) == 0) {
+        end_op();
+        return -1;
+    }
 
-  ilock(ip);
-  if(ip->type == T_DIR){
-    iunlockput(ip);
-    end_op();
-    return -1;
-  }
+    ilock(ip);
+    if(ip->type == T_SYMLINK) {
+        // If it's a symlink, we need to link to the symlink itself, not the target
+        iunlock(ip); // Unlock the symlink inode without following it
+    } else if(ip->type == T_DIR) {
+        iunlockput(ip);
+        end_op();
+        return -1; // Cannot link directories for safety reasons
+    } else {
+        ip->nlink++;
+        iupdate(ip);
+        iunlock(ip);
+    }
 
-  ip->nlink++;
-  iupdate(ip);
-  iunlock(ip);
-
-  if((dp = nameiparent(new, name)) == 0)
-    goto bad;
-  ilock(dp);
-  if(dp->dev != ip->dev || dirlink(dp, name, ip->inum) < 0){
+    if((dp = nameiparent(new, name)) == 0) {
+        iput(ip);
+        end_op();
+        return -1;
+    }
+    ilock(dp);
+    if(dp->dev != ip->dev || dirlink(dp, name, ip->inum) < 0) {
+        iunlockput(dp);
+        iunlockput(ip);
+        end_op();
+        return -1;
+    }
     iunlockput(dp);
-    goto bad;
-  }
-  iunlockput(dp);
-  iput(ip);
+    iput(ip);
 
-  end_op();
-
-  return 0;
-
-bad:
-  ilock(ip);
-  ip->nlink--;
-  iupdate(ip);
-  iunlockput(ip);
-  end_op();
-  return -1;
+    end_op();
+    return 0;
 }
+
 
 // Is the directory dp empty except for "." and ".." ?
 static int
@@ -182,61 +223,64 @@ isdirempty(struct inode *dp)
 
 //PAGEBREAK!
 int
-sys_unlink(void)
-{
-  struct inode *ip, *dp;
-  struct dirent de;
-  char name[DIRSIZ], *path;
-  uint off;
+sys_unlink(void) {
+    struct inode *ip, *dp;
+    struct dirent de;
+    char name[DIRSIZ], *path;
+    uint off;
 
-  if(argstr(0, &path) < 0)
-    return -1;
+    if(argstr(0, &path) < 0)
+        return -1;
 
-  begin_op();
-  if((dp = nameiparent(path, name)) == 0){
-    end_op();
-    return -1;
-  }
+    begin_op();
+    if((dp = nameiparent(path, name)) == 0) {
+        end_op();
+        return -1;
+    }
+    ilock(dp);
 
-  ilock(dp);
+    if(namecmp(name, ".") == 0 || namecmp(name, "..") == 0) {
+        iunlockput(dp);
+        end_op();
+        return -1; // Cannot unlink "." or ".."
+    }
 
-  // Cannot unlink "." or "..".
-  if(namecmp(name, ".") == 0 || namecmp(name, "..") == 0)
-    goto bad;
+    if((ip = dirlookup(dp, name, &off)) == 0) {
+        iunlockput(dp);
+        end_op();
+        return -1;
+    }
+    ilock(ip);
 
-  if((ip = dirlookup(dp, name, &off)) == 0)
-    goto bad;
-  ilock(ip);
+    if(ip->type == T_DIR && !isdirempty(ip)) {
+        iunlockput(ip);
+        iunlockput(dp);
+        end_op();
+        return -1;
+    }
 
-  if(ip->nlink < 1)
-    panic("unlink: nlink < 1");
-  if(ip->type == T_DIR && !isdirempty(ip)){
+    if(ip->type != T_SYMLINK && ip->nlink < 1)
+        panic("unlink: nlink < 1");
+
+    memset(&de, 0, sizeof(de));
+    if(writei(dp, (char*)&de, off, sizeof(de)) != sizeof(de)) {
+        panic("unlink: writei");
+    }
+
+    if(ip->type == T_DIR) {
+        dp->nlink--;
+        iupdate(dp);
+    }
+    iunlockput(dp);
+
+    ip->nlink--;
+    iupdate(ip);
     iunlockput(ip);
-    goto bad;
-  }
 
-  memset(&de, 0, sizeof(de));
-  if(writei(dp, (char*)&de, off, sizeof(de)) != sizeof(de))
-    panic("unlink: writei");
-  if(ip->type == T_DIR){
-    dp->nlink--;
-    iupdate(dp);
-  }
-  iunlockput(dp);
-
-  ip->nlink--;
-  iupdate(ip);
-  iunlockput(ip);
-
-  end_op();
-
-  return 0;
-
-bad:
-  iunlockput(dp);
-  end_op();
-  return -1;
+    end_op();
+    return 0;
 }
+
 
 static struct inode*
 create(char *path, short type, short major, short minor)
@@ -307,6 +351,13 @@ sys_open(void)
       return -1;
     }
     ilock(ip);
+    if(ip->type == T_SYMLINK && !(omode & O_NOFOLLOW)){
+      if (resolve_symlink(&ip, path, 0) < 0) {
+        iunlockput(ip);
+        end_op();
+        return -1;
+      }
+    }
     if(ip->type == T_DIR && omode != O_RDONLY){
       iunlockput(ip);
       end_op();
