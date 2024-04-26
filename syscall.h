@@ -24,4 +24,5 @@
 #define SYS_ticks_running 23
 #define SYS_get_lottery_tickets 24
 #define SYS_set_lottery_tickets 25
-#define SYS_lseek 26
+#define SYS_symlink  26
+#define SYS_lseek 27

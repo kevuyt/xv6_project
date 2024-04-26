@@ -95,22 +95,30 @@ filestat(struct file *f, struct stat *st)
 
 // Read from file f.
 int
-fileread(struct file *f, char *addr, int n)
+fileread(struct inode *ip, char *addr, int n)
 {
-  int r;
+  // Check if the inode represents a symbolic link
+  if (ip->type == T_SYMLINK) {
+      // Read the target path of the symbolic link
+      memmove(addr, ip->symlink_target, n);
+      return strlen(ip->symlink_target);
+    }
 
-  if(f->readable == 0)
-    return -1;
-  if(f->type == FD_PIPE)
-    return piperead(f->pipe, addr, n);
-  if(f->type == FD_INODE){
-    ilock(f->ip);
-    if((r = readi(f->ip, addr, f->off, n)) > 0)
-      f->off += r;
-    iunlock(f->ip);
-    return r;
-  }
-  panic("fileread");
+  // Handle regular file or pipe
+  if (ip->type == T_FILE) {
+      ilock(ip);
+      int r = readi(ip, addr, ip->off, n);
+      if (r > 0) {
+          ip->off += r;
+      }
+      iunlock(ip);
+      return r;
+    } else if (ip->type == T_PIPE) {
+        return piperead(ip->pipe, addr, n);
+    }
+
+    // Handle unsupported file types
+    return -1; // Error: Unsupported file type
 }
 
 //PAGEBREAK!
@@ -134,6 +142,25 @@ filewrite(struct file *f, char *addr, int n)
 
       begin_op();
       ilock(f->ip);
+      
+      if(f->off > f->ip->size){
+        int gap = f->off - f->ip->size;
+        char zeroes[4096];
+        memset(zeroes, 0, sizeof(zeroes));
+        while(gap > 0){
+          int towrite = gap < sizeof(zeroes) ? gap : sizeof(zeroes);
+          int written = writei(f->ip, zeroes, f->ip->size, towrite);
+          if(written < 0){
+            iunlock(f->ip);
+            end_op();
+            return -1;
+          }
+          gap -= written;
+          f->off += written;
+        }
+        f->ip->size = f->off;
+      }
+      
       if ((r = writei(f->ip, addr + i, f->off, n1)) > 0)
         f->off += r;
       iunlock(f->ip);

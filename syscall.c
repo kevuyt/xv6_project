@@ -6,6 +6,7 @@
 #include "proc.h"
 #include "x86.h"
 #include "syscall.h"
+#include "fs.h"
 
 // User code makes a system call with INT T_SYSCALL.
 // System call number in %eax.
@@ -108,6 +109,7 @@ extern int sys_ticks_running(void);
 extern int sys_set_lottery_tickets(void);
 extern int sys_get_lottery_tickets(void);
 extern int sys_lseek(void);
+extern int sys_symlink(void); // Add declaration for the symlink system call
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -136,7 +138,9 @@ static int (*syscalls[])(void) = {
 [SYS_ticks_running] sys_ticks_running,
 [SYS_set_lottery_tickets] sys_set_lottery_tickets,
 [SYS_get_lottery_tickets] sys_get_lottery_tickets,
+[SYS_symlink] sys_symlink, // Add entry for the symlink system call
 [SYS_lseek] sys_lseek,
+
 };
 
 void
