@@ -3,6 +3,7 @@
 #include "fcntl.h"
 #include "user.h"
 #include "x86.h"
+#include "syscall.h"
 
 char*
 strcpy(char *s, const char *t)
@@ -81,8 +82,19 @@ stat(const char *n, struct stat *st)
   return r;
 }
 
-int lseek(int fd, int offset) {
-    return syscall(SYS_lseek, fd, offset);
+int
+lseek(int fd, int offset) {
+  struct stat st;
+
+  if (fstat(fd, &st) < 0) return -1;
+
+  int current = st.offset;
+  current += offset;
+
+  if (current < 0 || current > st.size) current = 0;
+  st.offset = current;
+  return current;
+
 }
 
 int

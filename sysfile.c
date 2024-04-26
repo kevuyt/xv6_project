@@ -457,7 +457,7 @@ int sys_lseek(void) {
     if((f = myproc()->ofile[fd]) == 0)
         return -1;
 
-    f->off += offset;
+    f->off = offset;
 
     if(f->off < 0)
         f->off = 0;

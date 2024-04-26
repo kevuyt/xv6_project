@@ -55,4 +55,4 @@ struct dirent {
   char name[DIRSIZ];
 };
 
-uint bmap(struct inode *ip, uint bn);
+//static uint bmap(struct inode *ip, uint bn);

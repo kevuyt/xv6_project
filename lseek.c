@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
 
     lseek(fd, 0);
 
-    int bytes_read = read(fd, buffer, BUF_SIZE);
+    int bytes_read = fileread(fd, buffer, BUF_SIZE);
     if (bytes_read > 0) {
         printf(1, "Data read from file: %.*s\n", bytes_read, buffer);
     } else {
