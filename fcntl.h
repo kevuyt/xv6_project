@@ -5,3 +5,5 @@
 
 // Define a new flag to indicate not to follow symbolic links
 #define O_NOFOLLOW  0x400
+
+#define O_EXTENT 0100000  // Open file as an extent-based file

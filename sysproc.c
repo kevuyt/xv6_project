@@ -7,22 +7,17 @@
 #include "mmu.h"
 #include "proc.h"
 #include "defs.h"
+#define sleep sleep_ignore_conflict
+#define syscall syscall_ignore_conflict
 #include "stat.h"
 #include "fs.h"
 #include "syscall.h"
+#include "types.h"
+#include <unistd.h>
+#undef sleep
+#undef syscall
 
-int
-sys_symlink(void)
-{
-  char *target, *path;
 
-  if(argstr(0, &target) < 0 || argstr(1, &path) < 0)
-    return -1;
-
-  int result = symlink(target, path);
-
-  return result;
-}
 
 int
 sys_fork(void)
