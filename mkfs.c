@@ -11,7 +11,7 @@
 #include "file.h" 
 #include "stat.h"
 #include "param.h"
-
+#include "fs.h"
 #ifndef static_assert
 #define static_assert(a, b) do { switch (0) case 0: case (a): ; } while (0)
 #endif
@@ -270,18 +270,18 @@ iappend(uint inum, void *xp, int n)
     fbn = off / BSIZE;
     assert(fbn < MAXFILE);
     if(fbn < NDIRECT){
-      if(xint(extents[fbn]) == 0){
-        extents[fbn] = xint(freeblock++);
+      if(xint(din.addrs[fbn]) == 0){
+        din.addrs[fbn] = xint(freeblock++);
       }
-      x = xint(extents[fbn]);
+      x = xint(din.addrs[fbn]);
     } else {
-      if(xint(extents[NDIRECT]) == 0){
-        extents[NDIRECT] = xint(freeblock++);
+      if(xint(din.addrs[NDIRECT]) == 0){
+        din.addrs[NDIRECT] = xint(freeblock++);
       }
-      rsect(xint(extents[NDIRECT]), (char*)indirect);
+      rsect(xint(din.addrs[NDIRECT]), (char*)indirect);
       if(indirect[fbn - NDIRECT] == 0){
         indirect[fbn - NDIRECT] = xint(freeblock++);
-        wsect(xint(extents[NDIRECT]), (char*)indirect);
+        wsect(xint(din.addrs[NDIRECT]), (char*)indirect);
       }
       x = xint(indirect[fbn-NDIRECT]);
     }

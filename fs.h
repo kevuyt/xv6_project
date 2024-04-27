@@ -2,6 +2,8 @@
 #define FS_H
 
 #include "types.h"
+#include "sleeplock.h"
+
 
 // Constants
 #define ROOTINO 1  // root i-number
@@ -44,10 +46,12 @@ struct dinode {
     short major;        
     short minor;          
     short nlink;    
-    uint size;         
+    uint size; 
+    uint addrs[NDIRECT+1];  // Direct and indirect block addresses        
     struct extent extents[N_EXTENTS]; 
 
 }
+
 // Inodes per block.
 #define IPB (BSIZE / sizeof(struct dinode))
 
@@ -68,5 +72,4 @@ struct dirent {
   ushort inum;
   char name[DIRSIZ];
 };
-
 #endif  // FS_H
