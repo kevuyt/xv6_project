@@ -7,14 +7,75 @@
 #include "types.h"
 #include "defs.h"
 #include "param.h"
-#include "stat.h"
-#include "mmu.h"
-#include "proc.h"
-#include "fs.h"
 #include "spinlock.h"
 #include "sleeplock.h"
+#include "fs.h"
 #include "file.h"
 #include "fcntl.h"
+#include "stat.h"
+#include "proc.h"
+
+
+#define MAXPATH PATH_MAX
+// Function declarations
+static struct inode* create(char *path, short type, short major, short minor);
+
+
+int resolve_symlink(struct inode **ip, const char *path, int flags) {
+    // Check if the inode pointer is valid
+    if (*ip == 0) {
+        return -1; // Invalid inode
+    }
+
+    // Allocate a temporary buffer for storing target paths
+    char target[MAXPATH]; // Define MAXPATH as the maximum path length
+    int n = readi(*ip, target, 0, sizeof(target) - 1);
+    if (n <= 0) {
+        return -1; // Failed to read the target path
+    }
+    target[n] = '\0'; // Ensure the target path is null-terminated
+
+    // Release the previous inode
+    iunlockput(*ip);
+
+    // If O_NOFOLLOW flag is specified, do not recursively resolve
+    if (flags & O_NOFOLLOW) {
+        *ip = namei(target);
+        if (*ip == 0) {
+            return -1; // Failed to resolve the target path of the symlink
+        }
+        return 0; // Success without recursion
+    }
+
+    // Recursively resolve the target path until it's not a symlink
+    int depth = 0; // Depth counter for recursion
+    while (depth < 10) { // Limit the depth to prevent infinite loops
+        *ip = namei(target);
+        if (*ip == 0) {
+            return -1; // Failed to resolve the target path of the symlink
+        }
+
+        if ((*ip)->type != T_SYMLINK) {
+            break; // Exit loop if it's not a symlink
+        }
+
+        // Read the new target path from the new symlink
+        n = readi(*ip, target, 0, sizeof(target) - 1);
+        if (n <= 0) {
+            iput(*ip); // Release the new inode
+            return -1; // Failed to read the target path
+        }
+        target[n] = '\0'; // Ensure the target path is null-terminated
+        depth++; // Increment recursion depth
+    }
+
+    if (depth >= 10) {
+        iput(*ip); // Clean up in case of too deep recursion
+        return -1; // Return an error if recursion depth is exceeded
+    }
+
+    return 0; // Success
+}
 
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
@@ -119,7 +180,7 @@ sys_fstat(void)
 int
 sys_symlink(void)
 {
-  char *target = NULL, *path = NULL;  // Initialize pointers to NULL
+  char *target = 0, *path = 0;  // Initialize pointers to 0
   struct inode *ip;
   
   // Fetch the target and path from the user space
@@ -281,10 +342,8 @@ sys_unlink(void) {
     return 0;
 }
 
-
-static struct inode*
-create(char *path, short type, short major, short minor)
-{
+static struct inode* 
+create(char *path, short type, short major, short minor) {
   struct inode *ip, *dp;
   char name[DIRSIZ];
 
@@ -326,8 +385,8 @@ create(char *path, short type, short major, short minor)
   return ip;
 }
 
-int
-sys_open(void)
+
+int sys_open(void)
 {
   char *path;
   int fd, omode;
@@ -340,7 +399,8 @@ sys_open(void)
   begin_op();
 
   if(omode & O_CREATE){
-    ip = create(path, T_FILE, 0, 0);
+    int fileType = (omode & O_EXTENT) ? T_EXTENT : T_FILE;
+    ip = create(path, fileType, 0, 0);
     if(ip == 0){
       end_op();
       return -1;
@@ -352,11 +412,7 @@ sys_open(void)
     }
     ilock(ip);
     if(ip->type == T_SYMLINK && !(omode & O_NOFOLLOW)){
-      if (resolve_symlink(&ip, path, 0) < 0) {
-        iunlockput(ip);
-        end_op();
-        return -1;
-      }
+      // Handle symbolic link resolution
     }
     if(ip->type == T_DIR && omode != O_RDONLY){
       iunlockput(ip);

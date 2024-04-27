@@ -94,32 +94,33 @@ filestat(struct file *f, struct stat *st)
 }
 
 // Read from file f.
+// Assuming `fileread` should really handle `struct file*` instead of `struct inode*`
 int
-fileread(struct inode *ip, char *addr, int n)
-{
-  // Check if the inode represents a symbolic link
-  if (ip->type == T_SYMLINK) {
-      // Read the target path of the symbolic link
-      memmove(addr, ip->symlink_target, n);
-      return strlen(ip->symlink_target);
+fileread(struct file *f, char *addr, int n) {
+    if (!f || !f->ip) return -1; // Error handling for null pointers
+
+    struct inode *ip = f->ip; // Use the inode from the file structure
+
+    if (ip->type == T_SYMLINK) {
+        memmove(addr, ip->symlink_target, n);
+        return strlen(ip->symlink_target);
     }
 
-  // Handle regular file or pipe
-  if (ip->type == T_FILE) {
-      ilock(ip);
-      int r = readi(ip, addr, ip->off, n);
-      if (r > 0) {
-          ip->off += r;
-      }
-      iunlock(ip);
-      return r;
+    if (ip->type == T_FILE) {
+        ilock(ip);
+        int r = readi(ip, addr, f->off, n); // Use f->off instead of ip->off
+        if (r > 0) {
+            f->off += r;
+        }
+        iunlock(ip);
+        return r;
     } else if (ip->type == T_PIPE) {
         return piperead(ip->pipe, addr, n);
     }
 
-    // Handle unsupported file types
     return -1; // Error: Unsupported file type
 }
+
 
 //PAGEBREAK!
 // Write to file f.

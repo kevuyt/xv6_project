@@ -1,9 +1,9 @@
-#include "file.h"
+#ifndef FS_H
+#define FS_H
 
-// On-disk file system format.
-// Both the kernel and user programs use this header file.
+#include "types.h"
 
-
+// Constants
 #define ROOTINO 1  // root i-number
 #define BSIZE 512  // block size
 #define PATH_MAX 4096
@@ -11,9 +11,7 @@
 // Disk layout:
 // [ boot block | super block | log | inode blocks |
 //                                          free bit map | data blocks]
-//
-// mkfs computes the super block and builds an initial file system. The
-// super block describes the disk layout:
+
 struct superblock {
   uint size;         // Size of file system image (blocks)
   uint nblocks;      // Number of data blocks
@@ -27,35 +25,48 @@ struct superblock {
 #define NDIRECT 12
 #define NINDIRECT (BSIZE / sizeof(uint))
 #define MAXFILE (NDIRECT + NINDIRECT)
+#define N_EXTENTS 6  // Define the number of extents in the inode
 
-// On-disk inode structure
-struct dinode {
-  short type;           // File type
-  short major;          // Major device number (T_DEV only)
-  short minor;          // Minor device number (T_DEV only)
-  short nlink;          // Number of links to inode in file system
-  uint size;            // Size of file (bytes)
-  uint addrs[NDIRECT+1];   // Data block addresses
+// Extent structure to represent consecutive blocks
+struct extent {
+    uint start_block; // Start block of the extent
+    uint length;    
 };
+struct dinode {
+    uint dev;            
+    uint inum;            
+    int ref;              
+    struct sleeplock lock;
+    int valid;            
 
+
+    short type;        
+    short major;        
+    short minor;          
+    short nlink;    
+    uint size;         
+    struct extent extents[N_EXTENTS]; 
+
+}
 // Inodes per block.
-#define IPB           (BSIZE / sizeof(struct dinode))
+#define IPB (BSIZE / sizeof(struct dinode))
 
 // Block containing inode i
-#define IBLOCK(i, sb)     ((i) / IPB + sb.inodestart)
+#define IBLOCK(i, sb) ((i) / IPB + sb.inodestart)
 
 // Bitmap bits per block
-#define BPB           (BSIZE*8)
+#define BPB (BSIZE * 8)
 
 // Block of free map containing bit for block b
-#define BBLOCK(b, sb) (b/BPB + sb.bmapstart)
+#define BBLOCK(b, sb) (b / BPB + sb.bmapstart)
 
 // Directory is a file containing a sequence of dirent structures.
 #define DIRSIZ 14
 
+#include <sys/types.h>
 struct dirent {
   ushort inum;
   char name[DIRSIZ];
 };
 
-//static uint bmap(struct inode *ip, uint bn);
+#endif  // FS_H

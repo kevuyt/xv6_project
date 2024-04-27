@@ -76,6 +76,35 @@ balloc(uint dev)
   }
   panic("balloc: out of blocks");
 }
+static struct extent
+balloc_extent(uint dev, uint length) {
+    struct buf *bp;
+    uint start_block, free_blocks = 0;
+
+    for (uint b = 0; b < sb.size; b += BPB) {
+        bp = bread(dev, BBLOCK(b, sb));
+        for (int i = 0; i < BPB && b + i < sb.size; i++) {
+            int m = 1 << (i % 8);
+            if ((bp->data[i/8] & m) == 0) { // Block is free
+                if (free_blocks == 0)
+                    start_block = b + i;
+                if (++free_blocks == length) {
+                    for (uint j = start_block; j < start_block + length; j++) {
+                        int idx = j % BPB;
+                        bp->data[idx/8] |= 1 << (idx % 8);
+                    }
+                    log_write(bp);
+                    brelse(bp);
+                    return (struct extent){start_block, length};
+                }
+            } else {
+                free_blocks = 0;  // Reset count if a block is not free
+            }
+        }
+        brelse(bp);
+    }
+    panic("balloc_extent: out of blocks");
+}
 
 // Free a disk block.
 static void
@@ -449,31 +478,29 @@ stati(struct inode *ip, struct stat *st)
 //PAGEBREAK!
 // Read data from inode.
 // Caller must hold ip->lock.
-int
-readi(struct inode *ip, char *dst, uint off, uint n)
-{
-  uint tot, m;
-  struct buf *bp;
+int readi(struct inode *ip, char *dst, uint off, uint n) {
+    uint total = 0, m;
+    struct extent ext;
+    int ext_index = 0;
 
-  if(ip->type == T_DEV){
-    if(ip->major < 0 || ip->major >= NDEV || !devsw[ip->major].read)
-      return -1;
-    return devsw[ip->major].read(ip, dst, n);
-  }
-
-  if(off > ip->size || off + n < off)
-    return -1;
-  if(off + n > ip->size)
-    n = ip->size - off;
-
-  for(tot=0; tot<n; tot+=m, off+=m, dst+=m){
-    bp = bread(ip->dev, bmap(ip, off/BSIZE));
-    m = min(n - tot, BSIZE - off%BSIZE);
-    memmove(dst, bp->data + off%BSIZE, m);
-    brelse(bp);
-  }
-  return n;
+    while (total < n) {
+        ext = ip->extents[ext_index];
+        if (off < ext.length * BSIZE) {
+            uint block_no = ext.start_block + off / BSIZE;
+            m = min(n - total, BSIZE - off % BSIZE);
+            struct buf *bp = bread(ip->dev, block_no);
+            memmove(dst + total, bp->data + off % BSIZE, m);
+            brelse(bp);
+            total += m;
+            off += m;
+        } else {
+            off -= ext.length * BSIZE;
+            ext_index++;
+        }
+    }
+    return total;
 }
+
 
 // PAGEBREAK!
 // Write data to inode.

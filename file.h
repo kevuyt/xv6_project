@@ -1,6 +1,8 @@
 #ifndef FILE_H
 #define FILE_H
 #include "sleeplock.h"
+#include "param.h"
+#include "types.h"
 
 
 struct file {
@@ -28,7 +30,7 @@ struct inode {
   short nlink;
   uint size;
   uint addrs[NDIRECT+1];
-  off_t off;             // Current file offset
+  int off_t;             // Current file offset
   struct pipe *pipe;     // Pointer to pipe (for pipes)
   // Add a field to store the target path of the symbolic link
   char symlink_target[PATH_MAX]; // Adjust the size as necessary
