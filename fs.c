@@ -415,7 +415,7 @@ bmap(struct inode *ip, uint bn)
     a = (uint*)bp->data;
     if((addr = a[bn]) == 0){
       a[bn] = addr = balloc(ip->dev);
-       (bp);
+      log_write(bp);
     }
   }
   bn -= NINDIRECT;
