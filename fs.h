@@ -23,9 +23,9 @@ struct superblock {
   uint bmapstart;    // Block number of first free map block
 };
 
-#define NDIRECT 12
+#define NDIRECT 10
 #define NINDIRECT (BSIZE / sizeof(uint))
-#define MAXFILE (NDIRECT + NINDIRECT)
+#define MAXFILE (NDIRECT + NINDIRECT + NINDIRECT*NINDIRECT*2)
 #define N_EXTENTS 6  // Define the number of extents in the inode
 
 // Extent structure to represent consecutive blocks
