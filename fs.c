@@ -417,21 +417,22 @@ bmap(struct inode *ip, uint bn)
       a[bn] = addr = balloc(ip->dev);
       log_write(bp);
     }
-    bn -= NINDIRECT;
-    if(bn < NINDIRECT*NINDIRECT) {
-      if((addr = ip->addrs[NDIRECT+1]) == 0)
-        ip->addrs[NDIRECT] = addr = balloc(ip->dev);
-      bp = bread(ip->dev, addr);
-      a = (uint*)bp->data;
-      addr = a[bn/NINDIRECT];
-      if(addr == 0) {
-        a[bn/NINDIRECT] = addr = balloc(ip->dev);
-        log_write(bp);
-      }
-    }
-    brelse(bp);
-    return addr;
   }
+  bn -= NINDIRECT;
+  if(bn < NINDIRECT*NINDIRECT) {
+    if((addr = ip->addrs[NDIRECT+1]) == 0)
+      ip->addrs[NDIRECT] = addr = balloc(ip->dev);
+    bp = bread(ip->dev, addr);
+    a = (uint*)bp->data;
+    addr = a[bn/NINDIRECT];
+    if(addr == 0) {
+      a[bn/NINDIRECT] = addr = balloc(ip->dev);
+      log_write(bp);
+    }
+  }
+    
+  brelse(bp);
+  return addr;
 
   panic("bmap: out of range");
 }

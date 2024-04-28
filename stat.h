@@ -20,4 +20,4 @@ struct stat {
   uint offset;   // Offset within file (for special file types)
 };
 
-#endif  // STAT_H
+#endif
