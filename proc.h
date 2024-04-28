@@ -1,3 +1,6 @@
+#ifndef PROC_H
+#define PROC_H
+
 #define DEFAULT_TICKETS 1
 #include "mmu.h"
 // Per-CPU state
@@ -65,3 +68,5 @@ struct proc {
 //   original data and bss
 //   fixed-size stack
 //   expandable heap
+
+#endif

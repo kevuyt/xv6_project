@@ -1,7 +1,9 @@
+#ifndef FILE_H
+#define FILE_H
+
 #include "param.h"
 #include "types.h"
 #include "buf.h"
-
 
 struct file {
   enum { FD_NONE, FD_PIPE, FD_INODE } type;
@@ -45,3 +47,5 @@ extern struct devsw devsw[];
 
 #define CONSOLE 1
 #define FD_SYMLINK 3 // Define symbolic link file descriptor type
+
+#endif

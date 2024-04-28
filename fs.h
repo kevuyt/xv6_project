@@ -1,3 +1,6 @@
+#ifndef FS_H
+#define FS_H
+
 #include "sleeplock.h" 
 
 
@@ -65,3 +68,5 @@ struct dirent {
   ushort inum;
   char name[DIRSIZ];
 };
+
+#endif

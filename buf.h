@@ -1,5 +1,5 @@
-#ifndef FS_H
-#define FS_H
+#ifndef BUF_H
+#define BUF_H
 #include "fs.h"
 struct buf {
   int flags;
