@@ -1,8 +1,4 @@
-#ifndef FS_H
-#define FS_H
-
-#include "types.h"
-#include "sleeplock.h"
+#include "sleeplock.h" 
 
 
 // Constants
@@ -40,8 +36,6 @@ struct dinode {
     int ref;              
     struct sleeplock lock;
     int valid;            
-
-
     short type;        
     short major;        
     short minor;          
@@ -50,7 +44,7 @@ struct dinode {
     uint addrs[NDIRECT+1];  // Direct and indirect block addresses        
     struct extent extents[N_EXTENTS]; 
 
-}
+};
 
 // Inodes per block.
 #define IPB (BSIZE / sizeof(struct dinode))
@@ -67,9 +61,7 @@ struct dinode {
 // Directory is a file containing a sequence of dirent structures.
 #define DIRSIZ 14
 
-#include <sys/types.h>
 struct dirent {
   ushort inum;
   char name[DIRSIZ];
 };
-#endif  // FS_H

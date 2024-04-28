@@ -1,6 +1,5 @@
 #include "spinlock.h" 
-#ifndef SLEEPLOCK_H
-#define SLEEPLOCK_H
+
 
 // Make sure to include the header defining `struct spinlock`
 
@@ -13,5 +12,3 @@ struct sleeplock {
   char *name;        // Name of lock.
   int pid;           // Process holding lock
 };
-
-#endif // SLEEPLOCK_H

@@ -9,7 +9,6 @@
 #include "param.h"
 #include "spinlock.h"
 #include "sleeplock.h"
-#include "fs.h"
 #include "file.h"
 #include "fcntl.h"
 #include "stat.h"
@@ -399,7 +398,7 @@ int sys_open(void)
   begin_op();
 
   if(omode & O_CREATE){
-    int fileType = (omode & O_EXTENT) ? T_EXTENT : T_FILE;
+    int fileType = (omode & O_EXTENT) ? T_EXTENTS : T_FILE;
     ip = create(path, fileType, 0, 0);
     if(ip == 0){
       end_op();

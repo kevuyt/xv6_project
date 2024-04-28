@@ -7,11 +7,9 @@
 
 #define stat xv6_stat  // avoid clash with host struct stat
 #include "types.h"
-#include "fs.h"
 #include "file.h" 
 #include "stat.h"
 #include "param.h"
-#include "fs.h"
 #ifndef static_assert
 #define static_assert(a, b) do { switch (0) case 0: case (a): ; } while (0)
 #endif
@@ -82,8 +80,7 @@ main(int argc, char *argv[])
     exit(1);
   }
 
-  assert((BSIZE % sizeof(struct dinode)) == 0);
-  assert((BSIZE % sizeof(struct dirent)) == 0);
+  assert((BSIZE % (&din)->size) == 0);
 
   fsfd = open(argv[1], O_RDWR|O_CREAT|O_TRUNC, 0666);
   if(fsfd < 0){

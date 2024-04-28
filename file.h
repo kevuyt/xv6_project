@@ -1,8 +1,6 @@
-#ifndef FILE_H
-#define FILE_H
-#include "sleeplock.h"
 #include "param.h"
 #include "types.h"
+#include "buf.h"
 
 
 struct file {
@@ -23,7 +21,7 @@ struct inode {
   int ref;            // Reference count
   struct sleeplock lock; // protects everything below here
   int valid;          // inode has been read from disk?
-
+  struct extent extents[100];
   short type;         // copy of disk inode
   short major;
   short minor;
@@ -47,6 +45,3 @@ extern struct devsw devsw[];
 
 #define CONSOLE 1
 #define FD_SYMLINK 3 // Define symbolic link file descriptor type
-
-
-#endif // FILE_H

@@ -13,12 +13,9 @@
 #include "defs.h"
 #include "param.h"
 #include "stat.h"
-#include "mmu.h"
 #include "proc.h"
 #include "spinlock.h"
 #include "sleeplock.h"
-#include "fs.h"
-#include "buf.h"
 #include "file.h"
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
@@ -484,7 +481,7 @@ int readi(struct inode *ip, char *dst, uint off, uint n) {
     int ext_index = 0;
 
     while (total < n) {
-        ext = ip->extents[ext_index];
+      ext = ip->extents[ext_index];
         if (off < ext.length * BSIZE) {
             uint block_no = ext.start_block + off / BSIZE;
             m = min(n - total, BSIZE - off % BSIZE);
